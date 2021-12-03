@@ -28,7 +28,7 @@ merge(Size, ZeroC, OneC) ->
   lists:reverse(lists:zipwith(fun({Pos, X}, {Pos, Y}) -> {Pos, {X, Y}} end, Zero, One)).
 
 get_all(Counter, Size) ->
-  lists:foldl(fun(I, Acc) -> [{I, counters:get(Counter, I)} | Acc] end, [], lists:seq(1, Size)).
+  lists:foldl(fun(I, Acc) -> [{I, atomics:get(Counter, I)} | Acc] end, [], lists:seq(1, Size)).
 
 %% Part2 ======================================================================
 part2(Input, Size, Commonalities) ->
@@ -48,7 +48,7 @@ part2(Input, Size, Commonalities) ->
 filter([Input], _, _, _) -> Input;
 filter(Input, Filter, Size, {Pos, {ZeroC, OneC}}) ->
   NewInput = lists:filter(fun(B) ->
-                            {Zero, One} = {counters:get(ZeroC, Pos), counters:get(OneC, Pos)},
+                            {Zero, One} = {atomics:get(ZeroC, Pos), atomics:get(OneC, Pos)},
                             case Filter(One, Zero) of
                               false ->
                                 binary:at(B, Pos - 1) =:= $0;
@@ -61,18 +61,15 @@ filter(Input, Filter, Size, {Pos, {ZeroC, OneC}}) ->
 
 %% Common =====================================================================
 commonalities(L, Size) ->
-  ZeroAcc = counters:new(Size, []),
-  OneAcc = counters:new(Size, []),
+  ZeroAcc = atomics:new(Size, []),
+  OneAcc = atomics:new(Size, []),
   Self = self(),
   Chunks = util:split_to_chunks(L, 100),
-  Pids = lists:map(
-           fun(Chunk) ->
-             spawn(
-               fun() ->
-                 Res = lists:foreach(fun(X) -> map_bits(X, {1, {ZeroAcc, OneAcc}}) end, Chunk),
-                 Self ! {{done, self()}, Res}
-               end)
-           end, Chunks),
+  Fun = fun(Chunk) ->
+          lists:foreach(fun(X) -> map_bits(X, {1, {ZeroAcc, OneAcc}}) end, Chunk),
+          Self ! {{done, self()}, ok}
+        end,
+  Pids = lists:map(fun(Chunk) -> spawn(fun() -> Fun(Chunk) end) end, Chunks),
   lists:foreach(fun(Pid) -> receive_({done, Pid}) end, Pids),
   {ZeroAcc, OneAcc}.
 
@@ -80,9 +77,9 @@ map_bits(<<>>, {_Pos, _}) -> ok;
 map_bits(<<H, Rest/binary>>, {Pos, {ZeroAcc, OneAcc}}) ->
   case H of
     $0 ->
-      counters:add(ZeroAcc, Pos, 1);
+      atomics:add(ZeroAcc, Pos, 1);
     $1 ->
-      counters:add(OneAcc, Pos, 1)
+      atomics:add(OneAcc, Pos, 1)
   end,
   map_bits(Rest, {Pos + 1, {ZeroAcc, OneAcc}}).
 
