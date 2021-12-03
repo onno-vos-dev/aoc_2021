@@ -3,12 +3,7 @@
 -export([ solve/0 ]).
 
 solve() ->
-  Input = util:read_file("day3.txt",
-                         <<"\n">>,
-                         fun(A) ->
-                           lists:map(fun erlang:binary_to_integer/1, re:split(A, <<"">>, [trim]))
-                         end
-                        ),
+  Input = util:read_file("day3.txt", <<"\n">>, fun(A) -> A end),
   {3923414, 5852595} = {part1(Input), part2(Input)}.
 
 %% Part1 ======================================================================
@@ -30,20 +25,19 @@ calc_rate(Commonalities, Fun) ->
 part2(Input) ->
   OxygenFilter = fun(One, Zero) -> One >= Zero end,
   ScrubberFilter = fun(One, Zero) -> One < Zero end,
-  Oxygen = util:binary_to_decimal(filter(Input, OxygenFilter, {1, commonalities(Input)})),
-  Scrubber = util:binary_to_decimal(filter(Input, ScrubberFilter, {1, commonalities(Input)})),
+  Oxygen = util:binary_to_decimal(filter(Input, OxygenFilter, {0, commonalities(Input)})),
+  Scrubber = util:binary_to_decimal(filter(Input, ScrubberFilter, {0, commonalities(Input)})),
   Oxygen * Scrubber.
 
-filter(Input, _, _) when length(Input) =:= 1 ->
-  lists:foldl(fun(X, Acc) -> <<Acc/binary, (integer_to_binary(X))/binary>> end, <<"">>, hd(Input));
+filter([Input], _, _) -> Input;
 filter(Input, Filter, {Pos, Commonalities}) ->
-  NewInput = lists:filter(fun(L) ->
+  NewInput = lists:filter(fun(B) ->
                             {Zero, One} = maps:get(Pos, Commonalities),
                             case Filter(One, Zero) of
                               false ->
-                                lists:nth(Pos, L) =:= 0;
+                                binary:part(B, Pos, 1) =:= <<"0">>;
                               true ->
-                                lists:nth(Pos, L) =:= 1
+                                binary:part(B, Pos, 1) =:= <<"1">>
                             end
                           end,
                           Input),
@@ -59,16 +53,16 @@ map_bits(List, Acc) ->
     NewA = maps:update_with(Pos,
                             fun({Zero, One}) ->
                               case Y of
-                                0 -> {Zero + 1, One};
-                                1 -> {Zero, One + 1}
+                                $0 -> {Zero + 1, One};
+                                $1 -> {Zero, One + 1}
                               end
                             end,
                             case Y of
-                              0 -> {1, 0};
-                              1 -> {0, 1}
+                              $0 -> {1, 0};
+                              $1 -> {0, 1}
                             end,
                             A),
     {Pos + 1, NewA}
   end,
-  {1, Acc},
-  List).
+  {0, Acc},
+  binary_to_list(List)).
