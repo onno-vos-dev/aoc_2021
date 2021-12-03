@@ -21,19 +21,15 @@ time_avg(Fun, X) ->
 binary_to_decimal(Binary) ->
   binary_to_integer(Binary, 2).
 
-split_to_chunks(L, N) when N > 0 ->
-  Len = length(L),
-  case Len =< N of
-    true -> [L];
-    false ->
-      split_to_chunks(L, Len, N, [])
-  end.
+split_to_chunks(L, N) when is_integer(N), N > 0 ->
+  split_to_chunks(N, 0, L, []).
 
-split_to_chunks(L, Len, N, Acc) when Len =< N -> lists:reverse([L | Acc]);
-split_to_chunks(L, _, N, Acc) ->
-  {L1, L2} = lists:split(N, L),
-  split_to_chunks(L2, length(L2), N, [L1 | Acc]).
-
+split_to_chunks(_, _, [], Acc) ->
+  [Acc];
+split_to_chunks(N, N, L, Acc) ->
+  [Acc | split_to_chunks(N, 0, L, [])];
+split_to_chunks(N, X, [H|T], Acc) ->
+  split_to_chunks(N, X + 1, T, [H|Acc]).
 
 %%%_* Emacs ====================================================================
 %%% Local Variables:
