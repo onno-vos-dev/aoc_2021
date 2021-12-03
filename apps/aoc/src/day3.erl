@@ -4,65 +4,89 @@
 
 solve() ->
   Input = util:read_file("day3.txt", <<"\n">>, fun(A) -> A end),
-  {3923414, 5852595} = {part1(Input), part2(Input)}.
+  Size = byte_size(hd(Input)),
+  Commonalities = commonalities(Input, Size),
+  {3923414, 5852595} = {part1(Size, Commonalities), part2(Input, Size, Commonalities)}.
 
 %% Part1 ======================================================================
-part1(Input) ->
-  Commonalities = commonalities(Input),
-  Gamma = util:binary_to_decimal(calc_rate(Commonalities, fun(X, Y) -> X > Y end)),
-  Epsilon = util:binary_to_decimal(calc_rate(Commonalities, fun(X, Y) -> X < Y end)),
-  Gamma * Epsilon.
+part1(Size, Commonalities) ->
+  Gamma = calc_rate(Size, Commonalities, fun(X, Y) -> X > Y end),
+  Epsilon = calc_rate(Size, Commonalities, fun(X, Y) -> X < Y end),
+  binary_to_integer(Gamma, 2) * binary_to_integer(Epsilon, 2).
 
-calc_rate(Commonalities, Fun) ->
-  maps:fold(fun(_, {X, Y}, Acc) ->
+calc_rate(Size, {ZeroC, OneC}, Fun) ->
+  lists:foldl(fun({_Pos, {X, Y}}, Acc) ->
               case Fun(X, Y) of
                 true -> <<Acc/binary, "0">>;
                 false -> <<Acc/binary, "1">>
               end
-            end, <<"">>, Commonalities).
+            end, <<"">>, merge(Size, ZeroC, OneC)).
+
+merge(Size, ZeroC, OneC) ->
+  Zero = get_all(ZeroC, Size),
+  One = get_all(OneC, Size),
+  lists:reverse(lists:zipwith(fun({Pos, X}, {Pos, Y}) -> {Pos, {X, Y}} end, Zero, One)).
+
+get_all(Counter, Size) ->
+  lists:foldl(fun(I, Acc) -> [{I, counters:get(Counter, I)} | Acc] end, [], lists:seq(1, Size)).
 
 %% Part2 ======================================================================
-part2(Input) ->
+part2(Input, Size, Commonalities) ->
   OxygenFilter = fun(One, Zero) -> One >= Zero end,
   ScrubberFilter = fun(One, Zero) -> One < Zero end,
-  Oxygen = util:binary_to_decimal(filter(Input, OxygenFilter, {0, commonalities(Input)})),
-  Scrubber = util:binary_to_decimal(filter(Input, ScrubberFilter, {0, commonalities(Input)})),
-  Oxygen * Scrubber.
+  Self = self(),
+  _Pid1 = spawn_link(fun() ->
+                       Self ! {oxygen, filter(Input, OxygenFilter, Size, {1, Commonalities})}
+                     end),
+  _Pid2 = spawn_link(fun() ->
+                       Self ! {scrubber, filter(Input, ScrubberFilter, Size, {1, Commonalities})}
+                     end),
+  Oxygen = receive_(oxygen),
+  Scrubber = receive_(scrubber),
+  binary_to_integer(Oxygen, 2) * binary_to_integer(Scrubber, 2).
 
-filter([Input], _, _) -> Input;
-filter(Input, Filter, {Pos, Commonalities}) ->
+filter([Input], _, _, _) -> Input;
+filter(Input, Filter, Size, {Pos, {ZeroC, OneC}}) ->
   NewInput = lists:filter(fun(B) ->
-                            {Zero, One} = maps:get(Pos, Commonalities),
+                            {Zero, One} = {counters:get(ZeroC, Pos), counters:get(OneC, Pos)},
                             case Filter(One, Zero) of
                               false ->
-                                binary:part(B, Pos, 1) =:= <<"0">>;
+                                binary:at(B, Pos - 1) =:= $0;
                               true ->
-                                binary:part(B, Pos, 1) =:= <<"1">>
+                                binary:at(B, Pos - 1) =:= $1
                             end
                           end,
                           Input),
-  filter(NewInput, Filter, {Pos + 1, commonalities(NewInput)}).
+  filter(NewInput, Filter, Size, {Pos + 1, commonalities(NewInput, Size)}).
 
 %% Common =====================================================================
-commonalities(L) ->
-  {_, Commonalities} = lists:foldl(fun(X, {_, Acc}) -> map_bits(X, Acc) end, {ignore, #{}}, L),
-  Commonalities.
+commonalities(L, Size) ->
+  ZeroAcc = counters:new(Size, []),
+  OneAcc = counters:new(Size, []),
+  Self = self(),
+  Chunks = util:split_to_chunks(L, 100),
+  Pids = lists:map(
+           fun(Chunk) ->
+             spawn(
+               fun() ->
+                 Res = lists:foreach(fun(X) -> map_bits(X, {1, {ZeroAcc, OneAcc}}) end, Chunk),
+                 Self ! {{done, self()}, Res}
+               end)
+           end, Chunks),
+  lists:foreach(fun(Pid) -> receive_({done, Pid}) end, Pids),
+  {ZeroAcc, OneAcc}.
 
-map_bits(List, Acc) ->
-  lists:foldl(fun(Y, {Pos, A}) ->
-    NewA = maps:update_with(Pos,
-                            fun({Zero, One}) ->
-                              case Y of
-                                $0 -> {Zero + 1, One};
-                                $1 -> {Zero, One + 1}
-                              end
-                            end,
-                            case Y of
-                              $0 -> {1, 0};
-                              $1 -> {0, 1}
-                            end,
-                            A),
-    {Pos + 1, NewA}
+map_bits(<<>>, {_Pos, _}) -> ok;
+map_bits(<<H, Rest/binary>>, {Pos, {ZeroAcc, OneAcc}}) ->
+  case H of
+    $0 ->
+      counters:add(ZeroAcc, Pos, 1);
+    $1 ->
+      counters:add(OneAcc, Pos, 1)
   end,
-  {0, Acc},
-  binary_to_list(List)).
+  map_bits(Rest, {Pos + 1, {ZeroAcc, OneAcc}}).
+
+receive_(Type) ->
+  receive
+    {Type, Value} -> Value
+  end.
