@@ -14,7 +14,7 @@ read_file(File, Split) ->
   {ok, Bin} = read(File),
   [ S || S <- binary:split(Bin, Split, [trim, global]) ].
 
--spec read_file(string(), binary(), fun(() -> any())) -> [any()].
+-spec read_file(string(), binary(), fun((any()) -> any())) -> [any()].
 read_file(File, Split, CastFun) ->
   {ok, Bin} = read(File),
   [ CastFun(S) || S <- binary:split(Bin, Split, [trim, global]) ].
