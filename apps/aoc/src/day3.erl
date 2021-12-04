@@ -64,7 +64,7 @@ commonalities(L, Size) ->
   ZeroAcc = atomics:new(Size, []),
   OneAcc = atomics:new(Size, []),
   Self = self(),
-  Chunks = util:split_to_chunks(L, 100),
+  Chunks = util:split_to_chunks(L, application:get_env(aoc, chunk_size, 500)),
   Fun = fun(Chunk) ->
           lists:foreach(fun(X) -> map_bits(X, {1, {ZeroAcc, OneAcc}}) end, Chunk),
           Self ! {{done, self()}, ok}
