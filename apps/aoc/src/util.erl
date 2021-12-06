@@ -2,6 +2,7 @@
 
 -export([ read_file/2
         , read_file/3
+        , read_file_fold/4
         , time_avg/2
         , time_avg/4
         , binary_to_decimal/1
@@ -19,7 +20,12 @@ read_file(File, Split, CastFun) ->
   {ok, Bin} = read(File),
   [ CastFun(S) || S <- binary:split(Bin, Split, [trim, global]) ].
 
-  -spec time_avg(fun(() -> any()), non_neg_integer()) -> ok.
+-spec read_file_fold(string(), binary(), fun((any(), any()) -> any()), any()) -> any().
+read_file_fold(File, Split, FoldFun, Acc) ->
+  {ok, Bin} = read(File),
+  lists:foldl(FoldFun, Acc, binary:split(Bin, Split, [trim, global])).
+
+-spec time_avg(fun(() -> any()), non_neg_integer()) -> ok.
 time_avg(Fun, N) when is_function(Fun, 0) andalso is_integer(N) ->
   do_time_avg(Fun, N).
 
