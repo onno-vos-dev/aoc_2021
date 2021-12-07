@@ -6,22 +6,12 @@ solve() ->
   solve(input()).
 
 solve(Input) ->
-  {348996, 98231647} = {part1(Input), part2(Input)}.
+  Part1 = calculate_fuel(floor(util:median(Input)), Input, fun(A) -> A end),
+  Part2 = calculate_fuel(ceil(util:mean(Input)) - 1, Input, fun termial/1),
+  {348996, 98231647} = {Part1, Part2}.
 
-part1(Input) ->
-  MinMax = lists:seq(lists:min(Input), lists:max(Input)),
-  calculate_fuel(MinMax, Input, fun(A) -> A end, []).
-
-part2(Input) ->
-  MinMax = lists:seq(lists:min(Input), lists:max(Input)),
-  F = fun termial/1,
-  calculate_fuel(MinMax, Input, F, []).
-
-calculate_fuel([], _Input, _F, Acc) ->
-  lists:min(Acc);
-calculate_fuel([H | T], Input, F, Acc) ->
-  FuelCost = do_calculate_fuel(H, Input, F, 0),
-  calculate_fuel(T, Input, F, [ FuelCost | Acc ]).
+calculate_fuel(H, Input, F) ->
+  round(do_calculate_fuel(H, Input, F, 0)).
 
 do_calculate_fuel(_Pos, [], _F, Acc) -> Acc;
 do_calculate_fuel(Pos, [H | T], F, Acc) ->
