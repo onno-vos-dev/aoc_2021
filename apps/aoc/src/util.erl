@@ -5,6 +5,8 @@
         , read_file_fold/4
         , time_avg/2
         , time_avg/4
+        , median/1
+        , mean/1
         , binary_to_decimal/1
         , split_to_chunks/2
         ]).
@@ -44,6 +46,15 @@ binary_to_decimal(Binary) ->
 -spec split_to_chunks([any()], pos_integer()) -> [[any()], ...].
 split_to_chunks(L, N) when is_integer(N), N > 0 ->
   split_to_chunks(N, 0, L, []).
+
+median(Unsorted) ->
+  Sorted = lists:sort(Unsorted),
+  Length = length(Sorted),
+  Mid = Length div 2,
+  Rem = Length rem 2,
+  (lists:nth(Mid + Rem, Sorted) + lists:nth(Mid + 1, Sorted)) / 2.
+
+mean(L) -> lists:sum(L) / length(L).
 
 %%%_* Internal ================================================================
 -spec read(string()) -> {error, atom()} | {ok, binary()}.
