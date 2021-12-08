@@ -1,8 +1,9 @@
 -module(day7).
 
--export([ solve/0, solve/1, input/0 ]).
+-export([ solve/0, solve_nif/0, solve/1, input/0 ]).
 
 -dialyzer({nowarn_function, [ solve/0
+                            , solve_nif/0
                             , solve/1
                             , input/0
                             , calc_fuel/3
@@ -12,9 +13,12 @@
 solve() ->
   solve(input()).
 
+solve_nif() ->
+  {348996, 98231647} = util:calculate_fuel(input()).
+
 solve(Input) ->
-  Median = floor(util:median_nif(Input)),
-  Mean = ceil(util:mean_nif(Input)) - 1,
+  Median = floor(util:median(Input)),
+  Mean = ceil(util:mean(Input)) - 1,
   {348996, 98231647} = calc_fuel({Median, Mean}, Input, fun termial/1).
 
 calc_fuel({Median, Mean}, Input, F) ->
@@ -34,7 +38,8 @@ do_calc_fuel({Median, Mean}, [H | T], F, {AccMedian, AccMean}) ->
       do_calc_fuel({Median, Mean}, T, F, {MMedian * - 1 + AccMedian, F(MMove * -1) + AccMean})
   end.
 
-termial(X) -> X * (X + 1) div 2.
+termial(X) ->
+  X * (X + 1) div 2.
 
 input() ->
   util:read_file("day7.txt", <<",">>, fun erlang:binary_to_integer/1).
