@@ -2,18 +2,17 @@ use std::io::{Read};
 use std::fs::File;
 use std::time::{Instant};
 
-fn median(mut xs: Vec<i32>) -> i32 {
-  xs.sort_by(|x,y| x.partial_cmp(y).unwrap() );
-  let n = xs.len();
-  if n % 2 == 0 {
-      (xs[n/2] + xs[n/2 - 1]) / 2
+fn median(mut xs: Vec<i32>, len: usize) -> i32 {
+  xs.sort();
+  if len % 2 == 0 {
+      (xs[len/2] + xs[len/2 - 1]) / 2
   } else {
-      xs[n/2]
+      xs[len/2]
   }
 }
 
-fn mean(arr: Vec<i32>) -> i32 {
-  arr.iter().sum::<i32>() as i32 / arr.len() as i32
+fn mean(arr: Vec<i32>, len: usize) -> i32 {
+  arr.iter().sum::<i32>() as i32 / len as i32
 }
 
 fn calc_fuel_part1(median: i32, input: Vec<i32>) -> i32 {
@@ -49,12 +48,13 @@ fn main() {
   file.read_to_string(&mut s);
   let numbers_str: Vec<&str> = s.split(",").collect();
   let numbers: Vec<i32> = numbers_str.iter().map(|s| s.parse::<i32>().unwrap()).collect();
+  let len: usize = numbers.len();
   let input1: Vec<i32> = numbers.clone();
   let input2: Vec<i32> = numbers.clone();
   let l1: Vec<i32> = numbers.clone();
   let l2: Vec<i32> = numbers.clone();
-  let median = median(l1);
-  let mean = mean(l2);
+  let median = median(l1, len);
+  let mean = mean(l2, len);
   let part1 = calc_fuel_part1(median, input1);
   let part2 = calc_fuel_part2(mean, input2);
   let end = start.elapsed();
