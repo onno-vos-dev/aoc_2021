@@ -24,3 +24,5 @@ current_counterexample.eqc
 *.log
 *.log.*
 doc
+apps/aoc/priv/libaoc.so
+rust_nif_src/target/
