@@ -1,0 +1,14 @@
+[package]
+name = "aoc"
+version = "0.1.0"
+authors = []
+
+[lib]
+name = "aoc"
+path = "src/lib.rs"
+crate-type = ["dylib"]
+edition = "2021"
+
+[dependencies]
+rustler = "0.22.2"
+lazy_static = "1.2.0"
