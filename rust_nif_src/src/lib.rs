@@ -44,18 +44,34 @@ fn median_nif<'a>(env: Env<'a>, term: Term) -> NifResult<Term<'a>> {
 #[rustler::nif]
 fn calculate_fuel<'a>(env: Env<'a>, term: Term) -> NifResult<Term<'a>> {
   if let Ok(list) = term.decode::<Vec<i32>>() {
-    let input1: Vec<i32> = list.clone();
-    let input2: Vec<i32> = list.clone();
+    let input: Vec<i32> = list.clone();
     let l1: Vec<i32> = list.clone();
     let l2: Vec<i32> = list.clone();
     let median = median(l1);
     let mean = mean(l2);
-    let part1 = calc_fuel_part1(median, input1);
-    let part2 = calc_fuel_part2(mean, input2);
+    let (part1, part2) = calc_fuel(median, mean, input);
     Ok(((part1, part2)).encode(env))
   } else {
     Err(Error::BadArg)
   }
+}
+
+fn calc_fuel(median: i32, mean: i32, input: Vec<i32>) -> (i32, i32) {
+  let mut median_acc: i32 = 0;
+  let mut mean_acc: i32 = 0;
+  for i in input.iter() {
+    if median - i >= 0 {
+      median_acc += median - i
+    } else {
+      median_acc += (median - i) * -1
+    }
+    if mean - i >= 0 {
+      mean_acc += termial(mean - i)
+    } else {
+      mean_acc += termial((mean - i) * -1)
+    }
+  }
+  (median_acc, mean_acc)
 }
 
 fn median(mut xs: Vec<i32>) -> i32 {
@@ -70,28 +86,6 @@ fn median(mut xs: Vec<i32>) -> i32 {
 
 fn mean(arr: Vec<i32>) -> i32 {
   arr.iter().sum::<i32>() as i32 / arr.len() as i32
-}
-
-fn calc_fuel_part1(median: i32, input: Vec<i32>) -> i32 {
-  input.iter()
-    .fold(0, |acc, i| {
-      if median - i >= 0 {
-        acc + (median - i)
-      } else {
-        acc + ((median - i) * -1)
-      }
-    })
-}
-
-fn calc_fuel_part2(mean: i32, input: Vec<i32>) -> i32 {
-  input.iter()
-    .fold(0, |acc: i32, i| {
-      if mean - i >= 0 {
-        acc + termial(mean - i)
-      } else {
-        acc + termial((mean - i) * -1)
-      }
-    })
 }
 
 fn termial(x: i32) -> i32 {
