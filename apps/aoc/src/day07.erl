@@ -1,4 +1,4 @@
--module(day7).
+-module(day07).
 
 -export([ solve/0, solve_nif/0, solve/1, input/0 ]).
 

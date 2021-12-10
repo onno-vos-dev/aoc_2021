@@ -1,4 +1,4 @@
--module(day3).
+-module(day03).
 
 -export([ solve/0 ]).
 
