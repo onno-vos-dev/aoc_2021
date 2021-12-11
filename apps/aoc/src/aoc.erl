@@ -12,7 +12,7 @@ single_pass(Days) ->
   lists:foreach(fun(Day) ->
                   io:format("~p -> ", [Day]),
                   {T, _} = timer:tc(fun Day:solve/0),
-                  io:format("Time: ~p (~p ms)~n", [T, T div 1000])
+                  io:format("Time: ~p us (~p ms)~n", [T, T div 1000])
                 end, Days).
 
 multi_pass(Days) ->
