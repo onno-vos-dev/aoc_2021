@@ -109,7 +109,7 @@ do_time_avg(Fun, X) ->
                                   {Avg, _} = timer:tc(fun() -> Fun() end),
                                   Avg
                               end, lists:seq(1, X))) / X,
-  io:format("Time: ~p us ~.5f ms ~n~n", [AvgTimeMicro, AvgTimeMicro / 1000]).
+  io:format("Time: ~p us ~.5f ms ~n", [AvgTimeMicro, AvgTimeMicro / 1000]).
 
 -spec split_to_chunks(pos_integer(), non_neg_integer(), [any()], [any()]) -> [[any()], ...].
 split_to_chunks(_, _, [], Acc) ->
