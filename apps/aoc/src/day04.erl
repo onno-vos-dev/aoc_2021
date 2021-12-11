@@ -18,19 +18,13 @@
                       , numbers :: [pos_integer()] | '_'
                       }).
 
-%% Defines ====================================================================
--define(TABLE, bingo_cards).
-
 %% API ========================================================================
 solve() ->
   Input =
     util:read_file("day4.txt",
                    <<"\n">>),
-  case ets:info(?TABLE) of
-    undefined -> ok;
-    _ -> ets:delete(?TABLE)
-  end,
-  ets:new(?TABLE, [set, private, named_table]),
+  Tid = ets:new(?MODULE, [set, private]),
+  put(tid, Tid),
   Numbers = parse_input(Input),
   ok = run_game(Numbers),
   Part1 = get(part1),
@@ -70,28 +64,28 @@ build_numbers([Numbers | T], {Y, CardNumber}) ->
 add_to_ets(CardNumber, {{Y, X}, Number}) ->
   Key = {X, Y, CardNumber, Number},
   Row = #bingo_number{key = Key, x = X, y = Y, number = Number, card_number = CardNumber},
-  ets:insert(?TABLE, {Key, Row}).
+  ets:insert(get(tid), {Key, Row}).
 
 build_bingo_rows() ->
   MS = bingo_numbers_ms(),
   Rows = lists:foldl(fun({{_X, Y, CardNumber, Number}, _}, Acc) ->
                         update_acc(Y, Number, CardNumber, Acc)
-                      end, #{}, ets:select(?TABLE, MS)),
+                      end, #{}, ets:select(get(tid), MS)),
   lists:foreach(fun({{RowNum, CardNum}, Numbers}) ->
                   Key = {row, RowNum, CardNum},
                   BingoRow = #bingo_row{key = {RowNum, CardNum}, numbers = Numbers},
-                  ets:insert(?TABLE, {Key, BingoRow})
+                  ets:insert(get(tid), {Key, BingoRow})
                 end, maps:to_list(Rows)).
 
 build_bingo_columns() ->
   MS = bingo_numbers_ms(),
   Columns = lists:foldl(fun({{X, _Y, CardNumber, Number}, _}, Acc) ->
                           update_acc(X, Number, CardNumber, Acc)
-                        end, #{}, ets:select(?TABLE, MS)),
+                        end, #{}, ets:select(get(tid), MS)),
   lists:foreach(fun({{ColumnNum, CardNum}, Numbers}) ->
                   Key = {column, ColumnNum, CardNum},
                   BingoColumn = #bingo_column{key = {ColumnNum, CardNum}, numbers = Numbers},
-                  ets:insert(?TABLE, {Key, BingoColumn})
+                  ets:insert(get(tid), {Key, BingoColumn})
                 end, maps:to_list(Columns)).
 
 bingo_numbers_ms() ->
@@ -134,7 +128,7 @@ find_numbers(Number) ->
         [],
         [{element, 2, '$_'}]}
        ],
-  ets:select(?TABLE, MS).
+  ets:select(get(tid), MS).
 
 update_columns([]) -> ok;
 update_columns([#bingo_number{x = X, card_number = CardNum, number = Number} | T]) ->
@@ -143,7 +137,7 @@ update_columns([#bingo_number{x = X, card_number = CardNum, number = Number} | T
       update_columns(T);
     [#bingo_column{numbers = Numbers} = Column] ->
       Key = {column, X, CardNum},
-      ets:insert(?TABLE, {Key, Column#bingo_column{ numbers = Numbers -- [Number]}}),
+      ets:insert(get(tid), {Key, Column#bingo_column{ numbers = Numbers -- [Number]}}),
       update_columns(T)
   end.
 
@@ -152,7 +146,7 @@ find_column(ColumnNum, CardNum) ->
         [],
         [{element, 2, '$_'}]}
        ],
-  ets:select(?TABLE, MS).
+  ets:select(get(tid), MS).
 
 update_rows([]) -> ok;
 update_rows([#bingo_number{y = Y, card_number = CardNum, number = Number} | T]) ->
@@ -161,7 +155,7 @@ update_rows([#bingo_number{y = Y, card_number = CardNum, number = Number} | T]) 
       update_rows(T);
     [#bingo_row{numbers = Numbers} = Row] ->
       Key = {row, Y, CardNum},
-      ets:insert(?TABLE, {Key, Row#bingo_row{ numbers = Numbers -- [Number]}}),
+      ets:insert(get(tid), {Key, Row#bingo_row{ numbers = Numbers -- [Number]}}),
       update_rows(T)
   end.
 
@@ -170,7 +164,7 @@ find_row(RowNum, CardNum) ->
         [],
         [{element, 2, '$_'}]}
        ],
-  ets:select(?TABLE, MS).
+  ets:select(get(tid), MS).
 
 has_bingo() ->
   case {find_bingo_row(), find_bingo_column()} of
@@ -183,14 +177,14 @@ find_bingo_row() ->
         [],
         [{element, 2, '$_'}]}
         ],
-  ets:select(?TABLE, MS).
+  ets:select(get(tid), MS).
 
 find_bingo_column() ->
   MS = [{{'_', #bingo_column{key = '_', numbers = []}},
         [],
         [{element, 2, '$_'}]}
         ],
-  ets:select(?TABLE, MS).
+  ets:select(get(tid), MS).
 
 maybe_store_part1(CardNumber, Nr) ->
   case get(part1) of
@@ -210,7 +204,7 @@ maybe_store_part2(CardNumber, Nr) ->
 
 num_cards_remaining() ->
   MS = [{{{row, '_', '$1'}, '_'}, [], ['$1']}],
-  length(lists:usort(ets:select(?TABLE, MS))).
+  length(lists:usort(ets:select(get(tid), MS))).
 
 calculate_final_score(CardNumber, Nr) ->
   MS = [{{'_', #bingo_row{key = {'_', CardNumber}, numbers = '_'}},
@@ -222,7 +216,7 @@ calculate_final_score(CardNumber, Nr) ->
         ],
   lists:sum(lists:usort(lists:flatmap(fun(#bingo_column{numbers = Numbers}) -> Numbers;
                                           (#bingo_row{numbers = Numbers}) -> Numbers
-                                      end, ets:select(?TABLE, MS)))) * Nr.
+                                      end, ets:select(get(tid), MS)))) * Nr.
 
 remove_card_from_game(CardNumber) ->
   MS =
@@ -239,4 +233,4 @@ remove_card_from_game(CardNumber) ->
        [true]
      }
     ],
-  ets:select_delete(?TABLE, MS).
+  ets:select_delete(get(tid), MS).
