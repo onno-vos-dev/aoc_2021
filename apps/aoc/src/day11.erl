@@ -102,7 +102,6 @@ all_in_sync(Acc) ->
 num_flashed_octopus(Acc) ->
   maps:size(maps:filter(fun(_, V) -> V =:= 0 end, Acc)).
 
--spec increase_energy(map(), _) -> map().
 increase_energy(Acc, Pos) ->
   case maps:is_key(Pos, Acc) of
     true -> maps:update_with(Pos, fun(V) -> V + 1 end, Acc);
