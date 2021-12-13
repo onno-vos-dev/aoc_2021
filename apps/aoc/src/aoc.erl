@@ -1,11 +1,14 @@
 -module(aoc).
 
--export([run/0]).
+-export([ single_pass/0
+        , single_pass/1
+        , multi_pass/0
+        , multi_pass/1
+        , multi_pass/2
+        ]).
 
-run() ->
-  Days = days(),
-  single_pass(Days),
-  multi_pass(Days).
+single_pass() ->
+  single_pass(days()).
 
 single_pass(Days) ->
   io:format("Results for single iteration: ~n"),
@@ -15,11 +18,17 @@ single_pass(Days) ->
                   io:format("Time: ~p us (~p ms)~n", [T, T div 1000])
                 end, Days).
 
+multi_pass() ->
+  multi_pass(days()).
+
 multi_pass(Days) ->
-  io:format("~nResults for 50 iterations: ~n"),
+  multi_pass(Days, 10).
+
+multi_pass(Days, N) ->
+  io:format("~nResults for ~p iterations: ~n", [N]),
   lists:foreach(fun(Day) ->
                   io:format("~p -> ", [Day]),
-                  util:time_avg(fun Day:solve/0, 50)
+                  util:time_avg(fun Day:solve/0, N)
                 end, Days).
 
 days() ->
