@@ -26,3 +26,4 @@ current_counterexample.eqc
 doc
 apps/aoc/priv/libaoc.so
 rust_nif_src/target/
+rust/day*
