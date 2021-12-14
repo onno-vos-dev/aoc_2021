@@ -11,14 +11,14 @@ solve() ->
 
 %% Logic ======================================================================
 step(Polymer, Ops, Steps) ->
-  do_step_v2(pairs(Polymer, #{}), Ops, Steps, 0).
+  do_step(pairs(Polymer, #{}), Ops, Steps, 0).
 
 pairs([_], Acc) -> Acc;
 pairs([A, B | T], Acc) ->
   pairs([B | T], maps:update_with({A, B}, fun(V) -> V + 1 end, 1, Acc)).
 
-do_step_v2(Pairs, _Ops, Steps, CurrentStep) when Steps =:= CurrentStep -> Pairs;
-do_step_v2(Pairs, Ops, Steps, CurrentStep) ->
+do_step(Pairs, _Ops, Steps, CurrentStep) when Steps =:= CurrentStep -> Pairs;
+do_step(Pairs, Ops, Steps, CurrentStep) ->
   NewPairs =
     maps:fold(fun({A, B}, Count, Acc) ->
                 case maps:get({A, B}, Ops) of
@@ -32,7 +32,7 @@ do_step_v2(Pairs, Ops, Steps, CurrentStep) ->
                                                       Acc))
                 end
               end, #{}, Pairs),
-  do_step_v2(NewPairs, Ops, Steps, CurrentStep + 1).
+  do_step(NewPairs, Ops, Steps, CurrentStep + 1).
 
 quantity(Pairs) ->
   L = lists:flatmap(fun({{A, _}, Count}) -> [{A, Count}] end, maps:to_list(Pairs)),
