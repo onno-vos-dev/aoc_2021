@@ -21,16 +21,14 @@ do_step(Pairs, _Ops, Steps, CurrentStep) when Steps =:= CurrentStep -> Pairs;
 do_step(Pairs, Ops, Steps, CurrentStep) ->
   NewPairs =
     maps:fold(fun({A, B}, Count, Acc) ->
-                case maps:get({A, B}, Ops) of
-                  Char ->
-                    maps:update_with({Char, B},
-                                     fun(V) -> V + Count end,
-                                     Count,
-                                     maps:update_with({A, Char},
-                                                      fun(V) -> V + Count end,
-                                                      Count,
-                                                      Acc))
-                end
+                Char = maps:get({A, B}, Ops),
+                maps:update_with({Char, B},
+                                  fun(V) -> V + Count end,
+                                  Count,
+                                  maps:update_with({A, Char},
+                                                  fun(V) -> V + Count end,
+                                                  Count,
+                                                  Acc))
               end, #{}, Pairs),
   do_step(NewPairs, Ops, Steps, CurrentStep + 1).
 
