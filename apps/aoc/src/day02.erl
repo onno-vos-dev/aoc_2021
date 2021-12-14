@@ -9,7 +9,7 @@ solve() ->
                            [Dir, Num] = binary:split(A, <<" ">>), {Dir, binary_to_integer(Num)}
                          end),
   {Horizontal, Depth, {DepthWithAim, _Aim}} = plan_course(Input, {0, 0, {0, 0}}),
-  {Horizontal * Depth, Horizontal * DepthWithAim}.
+  {1762050, 1855892637} = {Horizontal * Depth, Horizontal * DepthWithAim}.
 
 plan_course([], Acc) ->
   Acc;
