@@ -5,9 +5,9 @@
 %% API ========================================================================
 solve() ->
   {Polymer, Ops} = input(),
-  Part1 = quantity(step(Polymer, Ops, 10)),
-  Part2 = quantity(step(Polymer, Ops, 40)),
-  {3230, 3542388214529} = {Part1, Part2}.
+  Part1 = step(Polymer, Ops, 10),
+  Part2 = quantity(do_step(Part1, Ops, 40, 10)),
+  {3230, 3542388214529} = {quantity(Part1), Part2}.
 
 %% Logic ======================================================================
 step(Polymer, Ops, Steps) ->
