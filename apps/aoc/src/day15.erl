@@ -7,27 +7,6 @@ solve() ->
   Grid = to_grid(#{}, input()),
   {687, 2957} = {calculate_lowest_risk(Grid), calculate_lowest_risk(expand_grid(Grid))}.
 
-expand_grid(Grid) ->
-  XYs = [ {X, Y} || X <- lists:seq(0, 4),
-                    Y <- lists:seq(0, 4)
-        ],
-  do_expand_grid(Grid, XYs, lists:max(maps:keys(Grid)), #{}).
-
-do_expand_grid(_, [], _, Acc) -> Acc;
-do_expand_grid(Grid, [ {OffsetX, OffsetY} | T ], {MaxX, MaxY}, Acc) ->
-  NewAcc = maps:fold(fun({X, Y}, V, A) ->
-                       maps:put({X + OffsetX * MaxX, Y + OffsetY * MaxY},
-                                plus_one_with_wrap(V, {OffsetX, OffsetY}),
-                                A)
-                     end, Acc, Grid),
-  do_expand_grid(Grid, T, {MaxX, MaxY}, NewAcc).
-
-plus_one_with_wrap(V, {OffsetX, OffsetY}) ->
-  case V + OffsetX + OffsetY of
-    Val when Val > 9 -> Val rem 9;
-    Val -> Val
-  end.
-
 %% Logic ======================================================================
 calculate_lowest_risk(Grid) ->
   Keys = maps:keys(Grid),
@@ -66,6 +45,27 @@ surrounding(X, Y, Grid) ->
                   Val -> [ {Val, Pos} | Acc ]
                 end
               end, [], [{X + 1, Y}, {X, Y + 1}, {X - 1, Y}, {X, Y - 1}]).
+
+expand_grid(Grid) ->
+  XYs = [ {X, Y} || X <- lists:seq(0, 4),
+                    Y <- lists:seq(0, 4)
+        ],
+  do_expand_grid(Grid, XYs, lists:max(maps:keys(Grid)), #{}).
+
+do_expand_grid(_, [], _, Acc) -> Acc;
+do_expand_grid(Grid, [ {OffsetX, OffsetY} | T ], {MaxX, MaxY}, Acc) ->
+  NewAcc = maps:fold(fun({X, Y}, V, A) ->
+                       maps:put({X + OffsetX * MaxX, Y + OffsetY * MaxY},
+                                plus_one_with_wrap(V, {OffsetX, OffsetY}),
+                                A)
+                     end, Acc, Grid),
+  do_expand_grid(Grid, T, {MaxX, MaxY}, NewAcc).
+
+plus_one_with_wrap(V, {OffsetX, OffsetY}) ->
+  case V + OffsetX + OffsetY of
+    Val when Val > 9 -> Val rem 9;
+    Val -> Val
+  end.
 
 %% Parsing ====================================================================
 input() ->
