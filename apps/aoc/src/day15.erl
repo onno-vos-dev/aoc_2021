@@ -14,18 +14,17 @@ calculate_lowest_risk(Grid) ->
   Checked = gb_sets:add_element({0, MinNode}, gb_sets:new()),
   do_calculate_lowest_risk(Grid, Checked, #{}, MaxNode, #{}).
 
-do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, MaxNode, Costs) ->
-  maps:get(MaxNode, Costs);
-do_calculate_lowest_risk(Grid, Checked, Seen, MaxNode, Costs) ->
+do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, _MaxNode, Score) ->
+  Score;
+do_calculate_lowest_risk(Grid, Checked, Seen, MaxNode, Score) ->
   {{Cost, {X, Y}}, NewSet0} = gb_sets:take_smallest(Checked),
   case maps:is_key({X, Y}, Seen) of
     true ->
-      do_calculate_lowest_risk(Grid, NewSet0, Seen, MaxNode, Costs);
+      do_calculate_lowest_risk(Grid, NewSet0, Seen, MaxNode, Score);
     false ->
       NewSet = build_new(NewSet0, X, Y, Seen, Cost, Grid),
       NewSeen = maps:put({X, Y}, true, Seen),
-      NewCosts = maps:put({X, Y}, Cost, Costs),
-      do_calculate_lowest_risk(Grid, NewSet, NewSeen, MaxNode, NewCosts)
+      do_calculate_lowest_risk(Grid, NewSet, NewSeen, MaxNode, Cost)
   end.
 
 build_new(Set, X, Y, Seen, Cost, Grid) ->
