@@ -2,6 +2,11 @@
 
 -export([solve/0]).
 
+%% Taken from:
+%% https://github.com/jesperes/aoc_erlang/blob/b53a0d2475920ef7beb330536e468eac6cfd659f/src/2021/aoc2021_day15.erl#L32
+%% Encoding the {X, Y} in the Seen map shaves off a good 800 ms from the total runtime.
+-define(BIT_XY(X, Y), X bsl 12 bor Y).
+
 %% API ========================================================================
 solve() ->
   Grid = to_grid(#{}, input()),
@@ -18,18 +23,18 @@ do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, _MaxNode, Score) ->
   Score;
 do_calculate_lowest_risk(Grid, Checked, Seen, MaxNode, Score) ->
   {{Cost, {X, Y}}, NewSet0} = gb_sets:take_smallest(Checked),
-  case maps:is_key({X, Y}, Seen) of
+  case maps:is_key(?BIT_XY(X, Y), Seen) of
     true ->
       do_calculate_lowest_risk(Grid, NewSet0, Seen, MaxNode, Score);
     false ->
       NewSet = build_new(NewSet0, X, Y, Seen, Cost, Grid),
-      NewSeen = maps:put({X, Y}, true, Seen),
+      NewSeen = maps:put(?BIT_XY(X, Y), true, Seen),
       do_calculate_lowest_risk(Grid, NewSet, NewSeen, MaxNode, Cost)
   end.
 
 build_new(Set, X, Y, Seen, Cost, Grid) ->
-  lists:foldl(fun({C, Coord}, Acc) ->
-                 case maps:is_key(Coord, Seen) of
+  lists:foldl(fun({C, {Xc, Yc} = Coord}, Acc) ->
+                 case maps:is_key(?BIT_XY(Xc, Yc), Seen) of
                    true -> Acc;
                    false -> gb_sets:add_element({Cost + C, Coord}, Acc)
                  end
