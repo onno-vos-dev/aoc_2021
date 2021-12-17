@@ -15,21 +15,21 @@ solve() ->
 %% Logic ======================================================================
 calculate_lowest_risk(Grid) ->
   Keys = maps:keys(Grid),
-  {MinNode, MaxNode} = {lists:min(Keys), lists:max(Keys)},
+  MinNode = lists:min(Keys),
   Checked = gb_sets:add_element({0, MinNode}, gb_sets:new()),
-  do_calculate_lowest_risk(Grid, Checked, #{}, MaxNode, #{}).
+  do_calculate_lowest_risk(Grid, Checked, #{}, infinity).
 
-do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, _MaxNode, Score) ->
+do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, Score) ->
   Score;
-do_calculate_lowest_risk(Grid, Checked, Seen, MaxNode, Score) ->
+do_calculate_lowest_risk(Grid, Checked, Seen, Score) ->
   {{Cost, {X, Y}}, NewSet0} = gb_sets:take_smallest(Checked),
   case maps:is_key(?BIT_XY(X, Y), Seen) of
     true ->
-      do_calculate_lowest_risk(Grid, NewSet0, Seen, MaxNode, Score);
+      do_calculate_lowest_risk(Grid, NewSet0, Seen, Score);
     false ->
       NewSet = build_new(NewSet0, X, Y, Seen, Cost, Grid),
       NewSeen = maps:put(?BIT_XY(X, Y), true, Seen),
-      do_calculate_lowest_risk(Grid, NewSet, NewSeen, MaxNode, Cost)
+      do_calculate_lowest_risk(Grid, NewSet, NewSeen, Cost)
   end.
 
 build_new(Set, X, Y, Seen, Cost, Grid) ->
