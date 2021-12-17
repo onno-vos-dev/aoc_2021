@@ -1,6 +1,8 @@
+use std::collections::{HashMap, BinaryHeap};
+use std::cmp::Reverse;
 use rustler::{Env, Encoder, Term, NifResult, Error};
 
-rustler::init!("util", [sort_ints, mean_nif, median_nif, calculate_fuel]);
+rustler::init!("util", [sort_ints, mean_nif, median_nif, calculate_fuel, dijkstra]);
 
 #[rustler::nif]
 fn sort_ints<'a>(env: Env<'a>, term: Term) -> NifResult<Term<'a>> {
@@ -90,4 +92,50 @@ fn mean(arr: Vec<i32>) -> i32 {
 
 fn termial(x: i32) -> i32 {
   x * (x + 1) / 2 as i32
+}
+
+// Day15 as a NIF --------------------------------------------------------------
+#[rustler::nif]
+fn dijkstra<'a>(env: Env<'a>, term: Term) -> NifResult<Term<'a>> {
+  if let Ok(grid) = term.decode::<HashMap<(i32, i32), i32>>() {
+    let risk_score: i32 = do_dijkstra(&grid);
+    Ok((risk_score).encode(env))
+  } else {
+    Err(Error::BadArg)
+  }
+}
+
+fn do_dijkstra(grid: &HashMap<(i32, i32), i32>) -> i32 {
+  let mut score: i32 = 0;
+  let min_key: (i32, i32) = (1, 1);
+  let mut checked: BinaryHeap<Reverse<(i32, (i32, i32))>> = BinaryHeap::new();
+  checked.push(Reverse((0, min_key)));
+  let mut seen: HashMap<(i32, i32), i32> = HashMap::new();
+  loop {
+    if checked.is_empty() {
+      return score
+    }
+    let Reverse((min_cost, (min_x, min_y))) = checked.pop().unwrap();
+    if ! seen.contains_key(&(min_x, min_y)) {
+      for (coord, cost) in surrounding(min_x, min_y, grid).iter() {
+        if !seen.contains_key(coord) {
+          checked.push(Reverse((*cost + min_cost, *coord)));
+        }
+      }
+      seen.insert((min_x, min_y), 0);
+      score = min_cost
+    }
+  }
+}
+
+fn surrounding(x: i32, y: i32, grid: &HashMap<(i32, i32), i32>) -> HashMap<(i32, i32), i32> {
+  let g: &HashMap<(i32, i32), i32> = grid;
+  let coords: Vec<(i32, i32)> = vec![(x + 1, y), (x, y + 1), (x -1, y), (x, y - 1)];
+  let mut existing_coords: HashMap<(i32, i32), i32> = HashMap::new();
+  for coord in coords.iter() {
+    if g.contains_key(coord) {
+      existing_coords.insert(*coord, *g.get(coord).unwrap());
+    }
+  };
+  existing_coords
 }

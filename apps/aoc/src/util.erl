@@ -13,16 +13,19 @@
         , binary_to_decimal/1
         , split_to_chunks/2
         , sort_ints/1
+        , dijkstra/1
         ]).
 
 -dialyzer({nowarn_function, [ mean_nif/1
                             , median_nif/1
                             , sort_ints/1
                             , calculate_fuel/1
+                            , dijkstra/1
                             , load_mean_nif/1
                             , load_median_nif/1
                             , load_sort_ints_nif/1
                             , load_calculate_fuel_nif/1
+                            , load_dijkstra_nif/1
                             ]}).
 
 -on_load(init/0).
@@ -84,6 +87,8 @@ median_nif(A) -> load_median_nif(A).
 
 calculate_fuel(A) -> load_calculate_fuel_nif(A).
 
+dijkstra(A) -> load_dijkstra_nif(A).
+
 %%%_* NIFS ====================================================================
 load_sort_ints_nif(_) ->
   not_loaded(?LINE).
@@ -95,6 +100,9 @@ load_median_nif(_) ->
   not_loaded(?LINE).
 
 load_calculate_fuel_nif(_) ->
+  not_loaded(?LINE).
+
+load_dijkstra_nif(_) ->
   not_loaded(?LINE).
 
 %%%_* Internal ================================================================

@@ -1,6 +1,9 @@
 -module(day15).
 
--export([solve/0]).
+-export([solve/0, solve_nif/0]).
+
+-dialyzer({nowarn_function, [ solve_nif/0
+                            ]}).
 
 %% Taken from:
 %% https://github.com/jesperes/aoc_erlang/blob/b53a0d2475920ef7beb330536e468eac6cfd659f/src/2021/aoc2021_day15.erl#L32
@@ -12,24 +15,28 @@ solve() ->
   Grid = to_grid(#{}, input()),
   {687, 2957} = {calculate_lowest_risk(Grid), calculate_lowest_risk(expand_grid(Grid))}.
 
+solve_nif() ->
+  Grid = to_grid(#{}, input()),
+  {687, 2957} = {util:dijkstra(Grid), util:dijkstra(expand_grid(Grid))}.
+
 %% Logic ======================================================================
 calculate_lowest_risk(Grid) ->
   Keys = maps:keys(Grid),
-  {MinNode, MaxNode} = {lists:min(Keys), lists:max(Keys)},
+  MinNode = lists:min(Keys),
   Checked = gb_sets:add_element({0, MinNode}, gb_sets:new()),
-  do_calculate_lowest_risk(Grid, Checked, #{}, MaxNode, #{}).
+  do_calculate_lowest_risk(Grid, Checked, #{}, infinity).
 
-do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, _MaxNode, Score) ->
+do_calculate_lowest_risk(_Grid, {0, nil}, _Seen, Score) ->
   Score;
-do_calculate_lowest_risk(Grid, Checked, Seen, MaxNode, Score) ->
+do_calculate_lowest_risk(Grid, Checked, Seen, Score) ->
   {{Cost, {X, Y}}, NewSet0} = gb_sets:take_smallest(Checked),
   case maps:is_key(?BIT_XY(X, Y), Seen) of
     true ->
-      do_calculate_lowest_risk(Grid, NewSet0, Seen, MaxNode, Score);
+      do_calculate_lowest_risk(Grid, NewSet0, Seen, Score);
     false ->
       NewSet = build_new(NewSet0, X, Y, Seen, Cost, Grid),
       NewSeen = maps:put(?BIT_XY(X, Y), true, Seen),
-      do_calculate_lowest_risk(Grid, NewSet, NewSeen, MaxNode, Cost)
+      do_calculate_lowest_risk(Grid, NewSet, NewSeen, Cost)
   end.
 
 build_new(Set, X, Y, Seen, Cost, Grid) ->
